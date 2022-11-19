@@ -1,0 +1,21 @@
+[tool.poetry]
+name = "slack-twitter"
+version = "0.1.0"
+description = ""
+authors = ["ohtaman <ohtamans@gmail.com>"]
+
+[tool.poetry.dependencies]
+python = "^3.9"
+fastapi = "^0.87.0"
+tweepy = "^4.12.1"
+uvicorn = "^0.19.0"
+
+[tool.poetry.dev-dependencies]
+pytest = "^5.2"
+autopep8 = "^2.0.0"
+pylint = "^2.15.6"
+mypy = "^0.991"
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
