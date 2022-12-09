@@ -1,3 +1,4 @@
+import logging
 from enum import Enum
 from typing import List, Optional
 from fastapi import FastAPI, HTTPException, Request
@@ -7,7 +8,10 @@ import tweepy
 REFRESH_TOKEN = 'VGVReWR3d0lJeFR1YW93MkszSzJWT3gxTlhwTFQtNXBoV3BlMDZVQXc5WFpROjE2Njg4MDc0NjgxNjc6MTowOnJ0OjE'
 
 
-class Authorization:
+logger = logging.getLogger(__name__)
+
+
+class Authorization(BaseModel):
     enterprise_id: Optional[str]
     team_id: str
     user_id: str
@@ -25,8 +29,9 @@ class MessageEvent(BaseEvent):
     text: str
 
 
-class EventType(Enum):
+class EventType(str, Enum):
     MESSAGE = 'message'
+    URL_VERIFICATION = 'url_verification'
 
 
 class URLVerificationMessage(BaseModel):
@@ -35,19 +40,19 @@ class URLVerificationMessage(BaseModel):
     type: str
 
 
-class EventEnvelope:
-    event_id: str
-    event_time: int
-    event_context: str
-    authorizations: List[Authorization]
-    authed_teams: List[str]
-    authed_users: List[str]
-    event: BaseEvent
-    api_app_id: str
-    team_id: str
+class EventEnvelope(BaseModel):
+    event_id: Optional[str]
+    event_time: Optional[int]
+    event_context: Optional[str]
+    authorizations: Optional[List[Authorization]]
+    authed_teams: Optional[List[str]]
+    authed_users: Optional[List[str]]
+    event: Optional[MessageEvent]
+    api_app_id: Optional[str]
+    team_id: Optional[str]
     token: str
     challenge: Optional[str]
-    type: str
+    type: EventType
 
 
 app = FastAPI()
@@ -55,27 +60,16 @@ app = FastAPI()
 
 @app.get('/')
 async def root():
-    return {'message': 'hoge'}
+    return {'message': 'Welcome to slack twitter bot'}
 
 
 @app.post('/slack_event_callback')
-def slack_event_callback(request: dict):
-    if 'type' not in request:
-        raise HTTPException(
-            status_code=400,
-            detail='Invalid request_type'
-        )
-    request_type = request['type']
-    if request_type == 'url_verification':
-        if 'challenge' in request:
-            return request['challenge']
-        else:
-            raise HTTPException(
-                status_code=400,
-                detail="challenge code must be included."
-            )
+def slack_event_callback(request: EventEnvelope):
+    if request.type == EventType.URL_VERIFICATION:
+        return request.challenge
 
-    if request_type == 'message':
-        event = MessageEvent.parse_obj(request.get('event'))
-
-    return {'message': event.text}
+    if request.type == EventType.MESSAGE:
+        logger(request)
+        event: MessageEvent = request.event
+        return event.text
+    return {}
